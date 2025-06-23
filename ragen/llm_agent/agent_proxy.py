@@ -189,7 +189,7 @@ def main(config):
 	print(f'rollout time: {end_time - start_time} seconds')
 	# print rollout rewards from the rm_scores
 	rm_scores = rollouts.batch["rm_scores"]
-	print(f'[DEBUG] rm_scores: {rm_scores}')
+	print(f'[DEBUG] rm_scores: {rm_scores.sum(-1)}')
 	metrics = rollouts.meta_info["metrics"]
 	avg_reward = rm_scores.sum(-1).mean().item()
 	print(f'rollout rewards: {avg_reward}')

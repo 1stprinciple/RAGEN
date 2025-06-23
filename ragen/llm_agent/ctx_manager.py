@@ -3,22 +3,23 @@ This is the context manager for the LLM agent.
 author: Kangrui Wang, Zihan Wang
 date: 2025-03-30
 """
-from itertools import zip_longest
-
-import torch
-import numpy as np
-from typing import List, Dict, Any, Optional, Union
-from dataclasses import dataclass
 import re
-from verl import DataProto
-from verl.utils.dataset.rl_dataset import collate_fn
-from transformers import AutoTokenizer
+from dataclasses import asdict, dataclass
+from itertools import zip_longest
+from typing import Any, Dict, List, Optional, Union
+
 import hydra
-from ragen.utils import register_resolvers
-from ragen.env import REGISTERED_ENV_CONFIGS
+import numpy as np
+import torch
 from tensordict import TensorDict
 
-from dataclasses import asdict
+# from verl.utils.dataset.rl_dataset import collate_fn
+from transformers import AutoTokenizer
+
+from ragen.env import REGISTERED_ENV_CONFIGS
+from ragen.utils import register_resolvers
+from verl import DataProto
+
 register_resolvers()
 
 def get_special_tokens(tokenizer: AutoTokenizer):
@@ -39,7 +40,7 @@ def get_masks_and_scores(input_ids: torch.Tensor, tokenizer: AutoTokenizer, all_
     NOTE: important! This assumes that the input_ids starts with system and then user & assistant in alternative ways
     """
     special_token, reward_token = get_special_tokens(tokenizer)
-    
+
     turn_starts = torch.where(input_ids == special_token, 1, 0)
     turn_indicators = torch.cumsum(turn_starts, dim=-1)
     if enable_response_mask:
@@ -47,7 +48,7 @@ def get_masks_and_scores(input_ids: torch.Tensor, tokenizer: AutoTokenizer, all_
     else:
         loss_mask = (turn_indicators > 1) # learns everything after system prompt
     response_mask = (turn_indicators % 2 == 1) & (turn_indicators > 1)
-    
+
     score_tensor = torch.zeros_like(input_ids, dtype=torch.float32)
     if use_turn_scores:
         for idx, scores in enumerate(zip_longest(*all_scores, fillvalue=0)):
@@ -77,7 +78,7 @@ class ContextManager:
     Translates between environment outputs and LLM inputs, and vice versa.
     """
 
-    def __init__(self, 
+    def __init__(self,
                  config,
                  tokenizer,
                  processor = None,
@@ -99,7 +100,7 @@ class ContextManager:
                 for n_group, env_tag in zip(self.es_cfg.env_configs.n_groups, self.es_cfg.env_configs.tags)
         }
         self._init_prefix_lookup()
-    
+
     def _check_env_installed(self, env_type: str):
         if env_type not in REGISTERED_ENV_CONFIGS:
             raise ValueError(f"Environment {env_type} is not installed. Please install it using the scripts/setup_{env_type}.sh script.")
@@ -141,7 +142,7 @@ class ContextManager:
                 prefix_lookup[i] = env_instruction
                 env_config_lookup[i] = env_config_lookup[env_tag]
             cur_group += n_group
-            
+
         self.prefix_lookup = prefix_lookup
         self.env_config_lookup = env_config_lookup
 
@@ -157,11 +158,11 @@ class ContextManager:
             else:
                 think_content, action_content = "", match.group(1)
 
-                
+
             for special_token in self.special_token_list:
                 action_content = action_content.replace(special_token, "").strip()
                 think_content = think_content.replace(special_token, "").strip()
-            
+
             actions = [action.strip() for action in action_content.split(self.action_sep) if action.strip()]
             max_actions = self.config.agent_proxy.max_actions_per_turn
 
@@ -171,14 +172,14 @@ class ContextManager:
 
             llm_response = f"<think>{think_content}</think><answer>{action_content}</answer>" if self.config.agent_proxy.enable_think else f"<answer>{action_content}</answer>"
         return llm_response, actions
-        
+
     def _normalize_score_tensor(self, score_tensor: torch.Tensor, env_outputs: List[Dict]) -> torch.Tensor:
         """
         Normalize the score tensor to be between 0 and 1.
         NOTE: only support score at the last token for now
         """
         assert self.config.agent_proxy.use_turn_scores == False, "Reward normalization is not supported for use_turn_scores == True"
-        
+
         rn_cfg = self.config.agent_proxy.reward_normalization
         grouping, method = rn_cfg.grouping, rn_cfg.method
         if grouping == "state":
@@ -210,7 +211,7 @@ class ContextManager:
             group2index[env_tag].append(i)
         group2index = {k: torch.tensor(v) for k, v in group2index.items()}
 
-        
+
         # apply penalty pre-normalization
         acc_scores = score_tensor[:, -1]
         normalized_acc_scores = acc_scores.clone()
@@ -224,7 +225,7 @@ class ContextManager:
         score_tensor[:, -1] = normalized_acc_scores
 
         return score_tensor
-    
+
     def get_lm_inputs(self, env_outputs: List[Dict], prepare_for_update: bool) -> DataProto:
         """
         env_outputs - please see below example
@@ -241,7 +242,7 @@ class ContextManager:
             if 'state' in env_output['history'][-1] and prepare_for_update:
                 env_output['history'] = env_output['history'][:-1] # when prepare for update, we do not add the state from the n+1 turn to the trajectory
             messages = [
-                {"role": "system", "content": f"You're a helpful assistant. "}, 
+                {"role": "system", "content": f"You're a helpful assistant. "},
                 {"role": "user", "content": self.prefix_lookup[env_output["env_id"]]}
             ]
 
@@ -256,9 +257,9 @@ class ContextManager:
                 if "reward" in content and not (prepare_for_update and idx == len(env_output["history"]) - 1):
                     # when prepare for update, we do not add the reward from the n+1 turn to the trajectory
                     messages.append({"role": "user", "content": f"Reward:\n{content['reward']}\n"})
-                    
 
-            # NOTE: this assertion is important for loss mask computation        
+
+            # NOTE: this assertion is important for loss mask computation
             assert all(msg["role"] == "assistant" for msg in messages[2::2])
 
             text = self.tokenizer.apply_chat_template(messages, add_generation_prompt=(not prepare_for_update), tokenize=False)
@@ -327,13 +328,13 @@ class ContextManager:
     def get_env_inputs(self, lm_outputs: DataProto) -> List[Dict]:
         if lm_outputs.batch is not None and 'responses' in lm_outputs.batch.keys():
             responses = self.tokenizer.batch_decode(
-                lm_outputs.batch['responses'], 
+                lm_outputs.batch['responses'],
                 skip_special_tokens=True
             )
         else: # dataproto has textual responses
             responses = lm_outputs.non_tensor_batch['response_texts']
         responses = ["<think>" + response if self.config.agent_proxy.enable_think else "<answer>" + response for response in responses] # The LLM generation does not include <think> tags. Add them back here.
-            
+
         env_ids = lm_outputs.non_tensor_batch['env_ids']
         env_inputs = []
         for env_id, response in zip(env_ids, responses):
@@ -350,7 +351,7 @@ class ContextManager:
         llm_inputs = self.get_lm_inputs(env_outputs, prepare_for_update=True)
         return llm_inputs
 
-    
+
 
 
 
@@ -380,7 +381,7 @@ def main(config):
     # batch = DataProto.from_single_dict(batch_dict)
     # env_inputs = ctx_manager.get_env_inputs(batch)
     # print(env_inputs)
-    
+
 
 
     env_outputs = [
@@ -404,7 +405,7 @@ def main(config):
             "metrics": {}
         }
     ]
-    
+
     prefix_lookup = {1: "Initial prompt", 2: "Initial prompt 2"}
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
     env_prompt = ctx_manager.get_lm_inputs(env_outputs, prepare_for_update=False)
@@ -414,4 +415,4 @@ def main(config):
 
 if __name__ == "__main__":
     main()
-    
+

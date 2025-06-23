@@ -91,15 +91,15 @@ trainer:
   val_before_train: True
   n_gpus_per_node: 1
   test_freq: 10
-  generations_to_log_to_wandb: 
+  generations_to_log_to_wandb:
     train: 128 # TODO: will be implemented
     val: 20
   logger: [ 'console', 'wandb' ]
 
 agent_proxy:
-  max_turn: 5
+  max_turn: 15
   action_sep: "||"
-  max_actions_per_turn: 5 # how many actions can be output at most in a single turn
+  max_actions_per_turn: 10 # how many actions can be output at most in a single turn
   use_turn_scores: False # important to GAE when applying token-level rewards to token-level advantages. If False, will take the sum of scores as the reward for the last turn.
   enable_think: True # False -> no think RL
   reward_normalization:
@@ -116,11 +116,11 @@ es_manager:
       tags: ["SimpleSokoban"]
       n_groups: [8] # If not set, all env names divide nums equally. Under the same group, the env config and env seed (prompt) are equal in each generation
   val:
-    env_groups: 256
+    env_groups: 8
     group_size: 1 # should be set to 1 because when val temperature is set to 0 and group size > 1, there will be repetitive prompts which leads to same trajectory.
     env_configs:
       tags: ["SimpleSokoban"]
-      n_groups: [256] # TODO: If not set, all env names divide nums equally. Under the same group, the env config and env seed (prompt) are equal in each generation
+      n_groups: [8] # TODO: If not set, all env names divide nums equally. Under the same group, the env config and env seed (prompt) are equal in each generation
 
 ctx_manager:
   generation: # go to vllm

@@ -59,14 +59,19 @@ class FireworksProvider(LLMProvider):
         self.model_name = model_name
         self.api_key = api_key or os.environ.get("FIREWORKS_API_KEY")
         if not self.api_key:
-            raise ValueError("Fireworks API key not provided and not found in environment variables")
+            self.api_key = "foo"
+            # raise ValueError("Fireworks API key not provided and not found in environment variables")
 
-        self.client = AsyncOpenAI(api_key=self.api_key, base_url="https://api.fireworks.ai/inference/v1")
+        # base_url = "https://api.fireworks.ai/inference/v1"
+        base_url = "http://localhost:11235/v1"
+
+        self.client = AsyncOpenAI(api_key=self.api_key, base_url=base_url)
 
     async def generate(self, messages: List[Dict[str, str]], **kwargs) -> LLMResponse:
         response = await self.client.chat.completions.create(
             model=self.model_name,
             messages=messages,
+            # reasoning_effort="none",
             **kwargs
         )
         if response.choices[0].finish_reason in ['length', 'content_filter']:

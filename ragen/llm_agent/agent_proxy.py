@@ -4,8 +4,6 @@ from typing import Dict, List
 
 import hydra
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from verl.protocol import pad_dataproto_to_divisor, unpad_dataproto
-from verl.single_controller.ray.base import RayWorkerGroup
 from vllm import LLM, SamplingParams
 
 from verl import DataProto
@@ -130,13 +128,7 @@ class LLMAgentProxy:
 
 	def generate_sequences(self, lm_inputs: DataProto):
 		# TODO: add kv cache both for the vllm wrapper here and for verl vllm.
-		if isinstance(self.actor_wg, RayWorkerGroup):
-			padded_lm_inputs, pad_size = pad_dataproto_to_divisor(lm_inputs, self.actor_wg.world_size)
-			padded_lm_outputs = self.actor_wg.generate_sequences(padded_lm_inputs)
-			lm_outputs = unpad_dataproto(padded_lm_outputs, pad_size=pad_size)
-			lm_outputs.meta_info = lm_inputs.meta_info
-			lm_outputs.non_tensor_batch = lm_inputs.non_tensor_batch
-		elif isinstance(self.actor_wg, VllmWrapperWg) or isinstance(self.actor_wg, ApiCallingWrapperWg):
+		if isinstance(self.actor_wg, VllmWrapperWg) or isinstance(self.actor_wg, ApiCallingWrapperWg):
 			lm_outputs = self.actor_wg.generate_sequences(lm_inputs)
 		else:
 			raise ValueError(f"Unsupported actor worker type: {type(self.actor_wg)}")
@@ -191,6 +183,7 @@ def main(config):
 	import time
 	start_time = time.time()
 	rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample': False, 'validate': True}), val=True)
+	print("messages_list: ", rollouts.non_tensor_batch['messages_list'])
 	print(f'[DEBUG] rollouts: {rollouts}')
 	end_time = time.time()
 	print(f'rollout time: {end_time - start_time} seconds')

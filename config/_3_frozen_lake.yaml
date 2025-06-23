@@ -4,6 +4,18 @@ defaults:
 trainer:
   experiment_name: frozenlake-main
 
+model_config:
+  model_name: local_deployment # should be registered in model_info
+  max_concurrency: 8
+
+model_info:
+  local_deployment:
+    provider_name: fireworks
+    # model_name: accounts/fireworks/models/qwen3-30b-a3b
+    model_name: rlor_model
+    generation_kwargs:
+      temperature: 0
+      max_tokens: 4096
 
 es_manager:
   train:

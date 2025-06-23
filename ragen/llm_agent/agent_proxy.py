@@ -1,15 +1,18 @@
+import os
+import time
+from typing import Dict, List
+
+import hydra
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from verl.protocol import pad_dataproto_to_divisor, unpad_dataproto
+from verl.single_controller.ray.base import RayWorkerGroup
+from vllm import LLM, SamplingParams
+
+from verl import DataProto
+
+from .base_llm import ConcurrentLLM
 from .ctx_manager import ContextManager
 from .es_manager import EnvStateManager
-from vllm import LLM, SamplingParams
-from verl.single_controller.ray.base import RayWorkerGroup
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from verl import DataProto
-import hydra
-import os
-from typing import List, Dict
-from verl.protocol import pad_dataproto_to_divisor, unpad_dataproto
-from .base_llm import ConcurrentLLM
-import time
 
 
 class VllmWrapperWg: # Thi is a developing class for eval and test
@@ -46,7 +49,7 @@ class VllmWrapperWg: # Thi is a developing class for eval and test
 
 	def generate_sequences(self, lm_inputs: DataProto):
 		"""
-		Convert the input ids to text, and then generate the sequences. Finally create a dataproto. 
+		Convert the input ids to text, and then generate the sequences. Finally create a dataproto.
 		This aligns with the verl Worker Group interface.
 		"""
 		# NOTE: free_cache_engine is not used in the vllm wrapper. Only used in the verl vllm.
@@ -57,7 +60,7 @@ class VllmWrapperWg: # Thi is a developing class for eval and test
 		input_texts = [i.replace("<|endoftext|>", "") for i in input_texts]
 
 		outputs = self.llm.generate(input_texts, sampling_params=self.sampling_params)
-		texts = [output.outputs[0].text for output in outputs] 
+		texts = [output.outputs[0].text for output in outputs]
 		lm_outputs = DataProto()
 		lm_outputs.non_tensor_batch = {
 			'response_texts': texts,
@@ -67,29 +70,29 @@ class VllmWrapperWg: # Thi is a developing class for eval and test
 		lm_outputs.meta_info = lm_inputs.meta_info
 
 		return lm_outputs
-	
+
 class ApiCallingWrapperWg:
     """Wrapper class for API-based LLM calls that fits into the VERL framework"""
-    
+
     def __init__(self, config, tokenizer):
         self.config = config
         self.tokenizer = tokenizer
         model_info = config.model_info[config.model_config.model_name]
         self.llm_kwargs = model_info.generation_kwargs
-        
-        
+
+
         self.llm = ConcurrentLLM(
 			provider=model_info.provider_name,
             model_name=model_info.model_name,
             max_concurrency=config.model_config.max_concurrency
         )
-        
+
         print(f'API-based LLM ({model_info.provider_name} - {model_info.model_name}) initialized')
 
 
     def generate_sequences(self, lm_inputs: DataProto) -> DataProto:
         """
-        Convert the input ids to text, make API calls to generate responses, 
+        Convert the input ids to text, make API calls to generate responses,
         and create a DataProto with the results.
         """
 
@@ -109,7 +112,7 @@ class ApiCallingWrapperWg:
 			'group_ids': lm_inputs.non_tensor_batch['group_ids']
 		} # this is a bit hard-coded to bypass the __init__ check in DataProto
         lm_outputs.meta_info = lm_inputs.meta_info
-        
+
         return lm_outputs
 
 class LLMAgentProxy:
@@ -153,54 +156,52 @@ class LLMAgentProxy:
 			env_outputs: List[Dict] = es_manager.step(env_inputs)
 			if len(env_outputs) == 0: # all finished
 				break
-		rollout_states = es_manager.get_rollout_states() 
+		rollout_states = es_manager.get_rollout_states()
 		rollouts = ctx_manager.formulate_rollouts(rollout_states)
 		# self.tokenizer.batch_decode(rollouts.batch['input_ids'], skip_special_tokens=False) # see all the trajectories
 		return rollouts
 
-@hydra.main(version_base=None, config_path="../../config", config_name="base")
-def main(config):
-	# detect config name from python -m ragen.llm_agent.agent_proxy --config_name frozen_lake
-	os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
-	os.environ["CUDA_VISIBLE_DEVICES"] = str(config.system.CUDA_VISIBLE_DEVICES)
-	tokenizer = AutoTokenizer.from_pretrained(config.actor_rollout_ref.model.path)
-	actor_wg = VllmWrapperWg(config, tokenizer)
-	proxy = LLMAgentProxy(config, actor_wg, tokenizer)
-	import time
-	for _ in range(3):
-		start_time = time.time()
-		rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample':config.actor_rollout_ref.rollout.do_sample, 'validate': True}), val=True)
-		end_time = time.time()
-		print(f'rollout time: {end_time - start_time} seconds')
-		# print rollout rewards from the rm_scores
-		rm_scores = rollouts.batch["rm_scores"]
-		metrics = rollouts.meta_info["metrics"]
-		avg_reward = rm_scores.sum(-1).mean().item()
-		print(f'rollout rewards: {avg_reward}')
-		print(f'metrics:')
-		for k, v in metrics.items():
-			print(f'{k}: {v}')
-
-# @hydra.main(version_base=None, config_path="../../config", config_name="evaluate_api_llm")
+# @hydra.main(version_base=None, config_path="../../config", config_name="base")
 # def main(config):
 # 	# detect config name from python -m ragen.llm_agent.agent_proxy --config_name frozen_lake
 # 	tokenizer = AutoTokenizer.from_pretrained(config.actor_rollout_ref.model.path)
 # 	actor_wg = ApiCallingWrapperWg(config, tokenizer)
 # 	proxy = LLMAgentProxy(config, actor_wg, tokenizer)
 # 	import time
-# 	start_time = time.time()
-# 	rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample': False, 'validate': True}), val=True)
-# 	print(f'[DEBUG] rollouts: {rollouts}')
-# 	end_time = time.time()
-# 	print(f'rollout time: {end_time - start_time} seconds')
-# 	# print rollout rewards from the rm_scores
-# 	rm_scores = rollouts.batch["rm_scores"]
-# 	metrics = rollouts.meta_info["metrics"]
-# 	avg_reward = rm_scores.sum(-1).mean().item()
-# 	print(f'rollout rewards: {avg_reward}')
-# 	print(f'metrics:')
-# 	for k, v in metrics.items():
-# 		print(f'{k}: {v}')
+# 	for _ in range(3):
+# 		start_time = time.time()
+# 		rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample':config.actor_rollout_ref.rollout.do_sample, 'validate': True}), val=True)
+# 		end_time = time.time()
+# 		print(f'rollout time: {end_time - start_time} seconds')
+# 		# print rollout rewards from the rm_scores
+# 		rm_scores = rollouts.batch["rm_scores"]
+# 		metrics = rollouts.meta_info["metrics"]
+# 		avg_reward = rm_scores.sum(-1).mean().item()
+# 		print(f'rollout rewards: {avg_reward}')
+# 		print(f'metrics:')
+# 		for k, v in metrics.items():
+# 			print(f'{k}: {v}')
+
+@hydra.main(version_base=None, config_path="../../config", config_name="evaluate_api_llm")
+def main(config):
+	# detect config name from python -m ragen.llm_agent.agent_proxy --config_name frozen_lake
+	tokenizer = AutoTokenizer.from_pretrained(config.actor_rollout_ref.model.path)
+	actor_wg = ApiCallingWrapperWg(config, tokenizer)
+	proxy = LLMAgentProxy(config, actor_wg, tokenizer)
+	import time
+	start_time = time.time()
+	rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample': False, 'validate': True}), val=True)
+	print(f'[DEBUG] rollouts: {rollouts}')
+	end_time = time.time()
+	print(f'rollout time: {end_time - start_time} seconds')
+	# print rollout rewards from the rm_scores
+	rm_scores = rollouts.batch["rm_scores"]
+	metrics = rollouts.meta_info["metrics"]
+	avg_reward = rm_scores.sum(-1).mean().item()
+	print(f'rollout rewards: {avg_reward}')
+	print(f'metrics:')
+	for k, v in metrics.items():
+		print(f'{k}: {v}')
 
 
 

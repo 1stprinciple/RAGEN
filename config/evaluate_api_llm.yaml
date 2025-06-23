@@ -6,18 +6,18 @@ model_config:
   max_concurrency: 16
 
 model_info:
-  Qwen2.5-7B-Instruct:
-    provider_name: together
-    model_name: Qwen/Qwen2.5-7B-Instruct-Turbo
-    generation_kwargs:
-      temperature: 0
-      max_tokens: 512
+  # Qwen2.5-7B-Instruct:
+  #   provider_name: fireworks
+  #   model_name: Qwen/Qwen2.5-7B-Instruct-Turbo
+  #   generation_kwargs:
+  #     temperature: 0
+  #     max_tokens: 512
   Qwen2.5-72B-Instruct:
-    provider_name: together
-    model_name: Qwen/Qwen2.5-72B-Instruct-Turbo
+    provider_name: fireworks
+    model_name: accounts/fireworks/models/qwen2p5-72b-instruct
     generation_kwargs:
       temperature: 0
-      max_tokens: 512
+      max_tokens: 4096
   claude-3.7:
     provider_name: anthropic
     model_name: claude-3-7-sonnet-20250219

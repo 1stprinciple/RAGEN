@@ -1,6 +1,6 @@
-# defaults:
+defaults:
   # - ppo_trainer # this is a symbolic link to the verl/verl/trainer/config/ppo_trainer.yaml file
-  # - envs
+  - envs
 
 system:
   CUDA_VISIBLE_DEVICES: "0"

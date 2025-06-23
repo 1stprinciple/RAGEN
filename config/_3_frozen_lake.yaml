@@ -14,7 +14,7 @@ model_info:
     # model_name: accounts/fireworks/models/qwen3-30b-a3b
     model_name: rlor_model
     generation_kwargs:
-      temperature: 0
+      temperature: 1
       max_tokens: 4096
 
 es_manager:

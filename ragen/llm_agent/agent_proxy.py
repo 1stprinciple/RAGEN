@@ -183,12 +183,13 @@ def main(config):
 	import time
 	start_time = time.time()
 	rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample': False, 'validate': True}), val=True)
-	print("messages_list: ", rollouts.non_tensor_batch['messages_list'])
-	print(f'[DEBUG] rollouts: {rollouts}')
+	# print("messages_list: ", rollouts.non_tensor_batch['messages_list'])
+	# print(f'[DEBUG] rollouts: {rollouts}')
 	end_time = time.time()
 	print(f'rollout time: {end_time - start_time} seconds')
 	# print rollout rewards from the rm_scores
 	rm_scores = rollouts.batch["rm_scores"]
+	print(f'[DEBUG] rm_scores: {rm_scores}')
 	metrics = rollouts.meta_info["metrics"]
 	avg_reward = rm_scores.sum(-1).mean().item()
 	print(f'rollout rewards: {avg_reward}')

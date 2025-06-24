@@ -118,9 +118,7 @@ class LLMAgentProxy:
 # 		print(f'metrics:')
 # 		for k, v in metrics.items():
 # 			print(f'{k}: {v}')
-def parse_args():
-      # Allow Hydra args to pass through
-    return args, unknown
+
 
 @hydra.main(version_base=None, config_path="../../config", config_name="evaluate_api_llm")
 def main(config):
@@ -150,10 +148,12 @@ def main(config):
 		for i, msg in enumerate(messages_list):
 			# print(i)
 			# print("score: ", rm_scores[i])
+			score = rm_scores[i].item()
+			score = min(max(score, 0.0), 1.0)  # Ensure score is between -1 and 1
 			row = {
 				"request_id": f"environment_{group_ids[i]}",
 				"messages": msg,
-				"score": rm_scores[i].item(),
+				"score": score,
 			}
 			f.write(json.dumps(row) + "\n")
 	print(f'[DEBUG] rm_scores: {rm_scores.sum(-1)}')

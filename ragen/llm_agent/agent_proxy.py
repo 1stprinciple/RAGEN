@@ -198,9 +198,9 @@ def main(config):
 	messages_list = rollouts.non_tensor_batch['messages_list']
 
 	env_ids = rollouts.non_tensor_batch['env_ids']
-	print(f'[DEBUG] env_ids: {env_ids}')
+	# print(f'[DEBUG] env_ids: {env_ids}')
 	group_ids = rollouts.non_tensor_batch['group_ids']
-	print(f'[DEBUG] group_ids: {group_ids}')
+	# print(f'[DEBUG] group_ids: {group_ids}')
 	with open(f"{config.output_dir}/messages_list.txt", "w") as f:
 		for i, msg in enumerate(messages_list):
 			# print(i)

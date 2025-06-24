@@ -6,7 +6,7 @@ trainer:
 
 model_config:
   model_name: local_deployment # should be registered in model_info
-  max_concurrency: 8
+  max_concurrency: 16
 
 model_info:
   local_deployment:

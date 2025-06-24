@@ -111,7 +111,7 @@ es_manager:
   train:
     env_groups: 8
     # under the same group, the env config and env seed are ensured to be equal
-    group_size: 16
+    group_size: 8
     env_configs:
       tags: ["SimpleSokoban"]
       n_groups: [8] # If not set, all env names divide nums equally. Under the same group, the env config and env seed (prompt) are equal in each generation

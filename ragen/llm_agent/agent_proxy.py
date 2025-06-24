@@ -144,6 +144,8 @@ def main(config):
 	# print(f'[DEBUG] env_ids: {env_ids}')
 	group_ids = rollouts.non_tensor_batch['group_ids']
 	# print(f'[DEBUG] group_ids: {group_ids}')
+	if not os.path.exists(config.output_dir):
+		os.makedirs(config.output_dir)
 	with open(f"{config.output_dir}/messages_list.txt", "w") as f:
 		for i, msg in enumerate(messages_list):
 			# print(i)

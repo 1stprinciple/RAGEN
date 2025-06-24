@@ -98,28 +98,6 @@ class LLMAgentProxy:
 		# self.tokenizer.batch_decode(rollouts.batch['input_ids'], skip_special_tokens=False) # see all the trajectories
 		return rollouts
 
-# @hydra.main(version_base=None, config_path="../../config", config_name="base")
-# def main(config):
-# 	# detect config name from python -m ragen.llm_agent.agent_proxy --config_name frozen_lake
-# 	tokenizer = AutoTokenizer.from_pretrained(config.actor_rollout_ref.model.path)
-# 	actor_wg = ApiCallingWrapperWg(config, tokenizer)
-# 	proxy = LLMAgentProxy(config, actor_wg, tokenizer)
-# 	import time
-# 	for _ in range(3):
-# 		start_time = time.time()
-# 		rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample':config.actor_rollout_ref.rollout.do_sample, 'validate': True}), val=True)
-# 		end_time = time.time()
-# 		print(f'rollout time: {end_time - start_time} seconds')
-# 		# print rollout rewards from the rm_scores
-# 		rm_scores = rollouts.batch["rm_scores"]
-# 		metrics = rollouts.meta_info["metrics"]
-# 		avg_reward = rm_scores.sum(-1).mean().item()
-# 		print(f'rollout rewards: {avg_reward}')
-# 		print(f'metrics:')
-# 		for k, v in metrics.items():
-# 			print(f'{k}: {v}')
-
-
 @hydra.main(version_base=None, config_path="../../config", config_name="evaluate_api_llm")
 def main(config):
 	# detect config name from python -m ragen.llm_agent.agent_proxy --config_name frozen_lake
@@ -135,7 +113,7 @@ def main(config):
 	end_time = time.time()
 	print(f'rollout time: {end_time - start_time} seconds')
 	# print rollout rewards from the rm_scores
-	rm_scores = rollouts.batch["rm_scores"].sum(-1)
+	rm_scores = rollouts.batch["original_rm_scores"].sum(-1)
 	messages_list = rollouts.non_tensor_batch['messages_list']
 
 	env_ids = rollouts.non_tensor_batch['env_ids']

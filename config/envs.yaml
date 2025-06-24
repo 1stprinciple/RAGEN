@@ -82,7 +82,7 @@ custom_envs:
     env_type: frozen_lake
     max_actions_per_traj: 30
     env_instruction: "You are solving the FrozenLake puzzle. Forbid the whole and go to the target. You may move to the unintended direction due to the slippery ice. Example answer format: <think>To forbid the hole and go to the target, I should go left then go up.</think><answer>Left || Up</answer>"
-    max_tokens: 1000
+    max_tokens: 8192
     env_config: null
 
   MetamathQA:

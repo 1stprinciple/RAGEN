@@ -73,7 +73,7 @@ class LLMAgentProxy:
 
 	def generate_sequences(self, lm_inputs: DataProto):
 		# TODO: add kv cache both for the vllm wrapper here and for verl vllm.
-		if isinstance(self.actor_wg, VllmWrapperWg) or isinstance(self.actor_wg, ApiCallingWrapperWg):
+		if isinstance(self.actor_wg, ApiCallingWrapperWg):
 			lm_outputs = self.actor_wg.generate_sequences(lm_inputs)
 		else:
 			raise ValueError(f"Unsupported actor worker type: {type(self.actor_wg)}")

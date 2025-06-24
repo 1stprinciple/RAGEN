@@ -1,3 +1,5 @@
+import argparse
+import json
 import os
 import time
 from typing import Dict, List
@@ -102,7 +104,7 @@ class ApiCallingWrapperWg:
         assert not failed_messages, f"Failed to generate responses for the following messages: {failed_messages}"
 
         texts = [result["response"] for result in results]
-        print(f'[DEBUG] texts: {texts}')
+        # print(f'[DEBUG] texts: {texts}')
         lm_outputs = DataProto()
         lm_outputs.non_tensor_batch = {
 			'response_texts': texts,
@@ -173,6 +175,9 @@ class LLMAgentProxy:
 # 		print(f'metrics:')
 # 		for k, v in metrics.items():
 # 			print(f'{k}: {v}')
+def parse_args():
+      # Allow Hydra args to pass through
+    return args, unknown
 
 @hydra.main(version_base=None, config_path="../../config", config_name="evaluate_api_llm")
 def main(config):
@@ -182,13 +187,30 @@ def main(config):
 	proxy = LLMAgentProxy(config, actor_wg, tokenizer)
 	import time
 	start_time = time.time()
-	rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample': False, 'validate': True}), val=True)
+	rollouts = proxy.rollout(DataProto(batch=None, non_tensor_batch=None, meta_info={'eos_token_id': 151645, 'pad_token_id': 151643, 'recompute_log_prob': False, 'do_sample': False, 'validate': True}), val=False)
+
 	# print("messages_list: ", rollouts.non_tensor_batch['messages_list'])
 	# print(f'[DEBUG] rollouts: {rollouts}')
 	end_time = time.time()
 	print(f'rollout time: {end_time - start_time} seconds')
 	# print rollout rewards from the rm_scores
-	rm_scores = rollouts.batch["rm_scores"]
+	rm_scores = rollouts.batch["rm_scores"].sum(-1)
+	messages_list = rollouts.non_tensor_batch['messages_list']
+
+	env_ids = rollouts.non_tensor_batch['env_ids']
+	print(f'[DEBUG] env_ids: {env_ids}')
+	group_ids = rollouts.non_tensor_batch['group_ids']
+	print(f'[DEBUG] group_ids: {group_ids}')
+	with open(f"{config.output_dir}/messages_list.txt", "w") as f:
+		for i, msg in enumerate(messages_list):
+			# print(i)
+			# print("score: ", rm_scores[i])
+			row = {
+				"request_id": f"environment_{group_ids[i]}",
+				"messages": msg,
+				"score": rm_scores[i].item(),
+			}
+			f.write(json.dumps(row) + "\n")
 	print(f'[DEBUG] rm_scores: {rm_scores.sum(-1)}')
 	metrics = rollouts.meta_info["metrics"]
 	avg_reward = rm_scores.sum(-1).mean().item()

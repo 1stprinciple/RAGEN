@@ -21,7 +21,7 @@ custom_envs:
       num_boxes: 2
       max_steps: 100
       search_depth: 10
-  
+
   SokobanDifferentGridVocab:
     env_type: sokoban
     max_actions_per_traj: 10
@@ -65,7 +65,7 @@ custom_envs:
     max_actions_per_traj: 1
     env_instruction: ""
     max_tokens: 100
-    env_config: 
+    env_config:
       lo_arm_name: "Phoenix"
       hi_arm_name: "Dragon"
 
@@ -74,15 +74,15 @@ custom_envs:
     max_actions_per_traj: 1
     env_instruction: ""
     max_tokens: 100
-    env_config: 
+    env_config:
       lo_arm_name: "Trader"
       hi_arm_name: "Librarian"
 
   FrozenLake:
     env_type: frozen_lake
-    max_actions_per_traj: 10
+    max_actions_per_traj: 30
     env_instruction: "You are solving the FrozenLake puzzle. Forbid the whole and go to the target. You may move to the unintended direction due to the slippery ice. Example answer format: <think>To forbid the hole and go to the target, I should go left then go up.</think><answer>Left || Up</answer>"
-    max_tokens: 100
+    max_tokens: 1000
     env_config: null
 
   MetamathQA:
@@ -120,10 +120,10 @@ custom_envs:
     #   Available actions: ['click[back to search]', 'click[< prev]', 'click[description]', 'click[features]', 'click[reviews]', 'click[buy now]', 'click[x-small]', 'click[small]', 'click[large tall]', 'click[navy]', 'click[deep atlantic]']
     #   <think>Having selected the size and color, I am ready to buy. Click buy now.</think><answer>click[buy now]</answer>
 
-    # You are browsing an online shop. Based on the instruction, find the product 
-    # that best matches the production description. You need to iteratively take 
-    # actions(search or click) in the browser and buy the chosen product. Example 
-    # process: 
+    # You are browsing an online shop. Based on the instruction, find the product
+    # that best matches the production description. You need to iteratively take
+    # actions(search or click) in the browser and buy the chosen product. Example
+    # process:
     # Instruction: Find me machine wash men's t-shirts with long sleeve with color: black, and size: xx-large big tall, and price lower than 50.00 dollars
     # WebShop [SEP] Instruction: [SEP] Find me machine wash men's t-shirts with long sleeve with color: black, and size: xx-large big tall, and price lower than 50.00 dollars [SEP] Search
     # Available actions: ['search[<content>]']
@@ -142,7 +142,7 @@ custom_envs:
     # <think>I already selected color and size, now click buy now</think><answer>click[buy now]</answer>
     max_tokens: 200
     # env_config: null
-    env_config: 
+    env_config:
       dataset: small # choose from small or full
     #   data_path: /RAGEN-Dev/external/webshop-minimal/webshop_minimal
     #   file_path: /RAGEN-Dev/external/webshop-minimal/webshop_minimal/data/items_shuffle.json

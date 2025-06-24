@@ -11,8 +11,8 @@ model_config:
 model_info:
   local_deployment:
     provider_name: fireworks
-    # model_name: accounts/fireworks/models/qwen3-30b-a3b
-    model_name: rlor_model
+    model_name: accounts/fireworks/models/qwen2p5-72b-instruct
+    # model_name: rlor_model
     generation_kwargs:
       temperature: 1
       max_tokens: 4096
@@ -24,3 +24,5 @@ es_manager:
   val:
     env_configs:
       tags: ["FrozenLake"]
+
+output_dir: ??

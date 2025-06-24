@@ -62,8 +62,8 @@ class FireworksProvider(LLMProvider):
             self.api_key = "foo"
             # raise ValueError("Fireworks API key not provided and not found in environment variables")
 
-        # base_url = "https://api.fireworks.ai/inference/v1"
-        base_url = "http://localhost:11235/v1"
+        base_url = "https://api.fireworks.ai/inference/v1"
+        # base_url = "http://localhost:11235/v1"
 
         self.client = AsyncOpenAI(api_key=self.api_key, base_url=base_url)
 

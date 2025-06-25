@@ -71,7 +71,7 @@ class FireworksProvider(LLMProvider):
         response = await self.client.chat.completions.create(
             model=self.model_name,
             messages=messages,
-            # reasoning_effort="none",
+            reasoning_effort="none",
             **kwargs
         )
         if response.choices[0].finish_reason in ['length', 'content_filter']:

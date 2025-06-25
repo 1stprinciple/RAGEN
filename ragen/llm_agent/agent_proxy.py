@@ -113,7 +113,8 @@ def main(config):
 	end_time = time.time()
 	print(f'rollout time: {end_time - start_time} seconds')
 	# print rollout rewards from the rm_scores
-	rm_scores = rollouts.batch["original_rm_scores"].sum(-1)
+	rm_scores = rollouts.batch["original_rm_scores"]
+	scores = rm_scores.sum(-1)  # sum over the last dimension
 	messages_list = rollouts.non_tensor_batch['messages_list']
 
 	env_ids = rollouts.non_tensor_batch['env_ids']
@@ -126,7 +127,7 @@ def main(config):
 		for i, msg in enumerate(messages_list):
 			# print(i)
 			# print("score: ", rm_scores[i])
-			score = rm_scores[i].item()
+			score = scores[i].item()
 			score = min(max(score, 0.0), 1.0)  # Ensure score is between -1 and 1
 			row = {
 				"request_id": f"environment_{group_ids[i]}",
@@ -134,7 +135,6 @@ def main(config):
 				"score": score,
 			}
 			f.write(json.dumps(row) + "\n")
-	print(f'[DEBUG] rm_scores: {rm_scores.sum(-1)}')
 	metrics = rollouts.meta_info["metrics"]
 	avg_reward = rm_scores.sum(-1).mean().item()
 	print(f'rollout rewards: {avg_reward}')

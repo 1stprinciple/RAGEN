@@ -109,7 +109,7 @@ agent_proxy:
 es_manager:
   format_penalty: -0.1
   train:
-    env_groups: 8
+    env_groups: 32
     # under the same group, the env config and env seed are ensured to be equal
     group_size: 8
     env_configs:

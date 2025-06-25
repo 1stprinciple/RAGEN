@@ -3,15 +3,17 @@ This is the environment state manager for the LLM agent.
 author: Pingyue Zhang
 date: 2025-03-30
 """
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Union
-import PIL.Image
-import hydra
 import random
-import numpy as np
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Union
 
-from ragen.env import REGISTERED_ENVS, REGISTERED_ENV_CONFIGS
+import hydra
+import numpy as np
+import PIL.Image
+
+from ragen.env import REGISTERED_ENV_CONFIGS, REGISTERED_ENVS
 from ragen.utils import register_resolvers
+
 register_resolvers()
 
 @dataclass
@@ -28,7 +30,7 @@ class EnvStatus:
 class EnvStateManager:
     """Manager for the environment state
     The class is responsible for managing multiple (kinds of) environments
-    
+
     """
     def __init__(self, config, mode: str = "train"):
         self.sys_config = config
@@ -66,7 +68,7 @@ class EnvStateManager:
                 else:
                     env_config = REGISTERED_ENV_CONFIGS[env_class](**cfg_template.env_config)
                 env_obj = REGISTERED_ENVS[env_class](env_config)
-                entry = {'tag': tag, 'group_id': env_id // self.group_size, 'env_id': env_id, 
+                entry = {'tag': tag, 'group_id': env_id // self.group_size, 'env_id': env_id,
                         'env': env_obj, 'config': env_config, 'status': EnvStatus(), 'max_actions_per_traj': max_actions_per_traj}
                 env_list.append(entry)
             done_groups += n_group
@@ -98,7 +100,7 @@ class EnvStateManager:
         for cache, env in zip(rollout_cache, envs):
             next_state = self._handle_mm_state(env['env'].render())
             cache['history'] = self._update_cache_history(cache['history'], next_state=next_state, actions_left=env['max_actions_per_traj'], num_actions_info=None)
-            
+
         self.rollout_cache = rollout_cache
         return rollout_cache
 
@@ -124,7 +126,7 @@ class EnvStateManager:
                 if done:
                     turn_done = True
                     break
-            
+
             return acc_reward, turn_info, turn_done, executed_actions
 
         def _log_env_state(status, history, cur_obs, max_actions_per_traj, executed_actions, all_actions, acc_reward, turn_done, turn_info, env_input):
@@ -157,7 +159,7 @@ class EnvStateManager:
             acc_reward, turn_info, turn_done, executed_actions = _execute_actions(env, valid_actions[:actions_left_before])
             if len(valid_actions) != len(env_input['actions']) or not valid_actions:
                 self.rollout_cache[env_id]["penalty"] += self.sys_config.es_manager.format_penalty
-                
+
             status, history = _log_env_state(entry['status'], self.rollout_cache[env_id]['history'], entry['env'].render(), entry['max_actions_per_traj'], executed_actions, valid_actions, acc_reward, turn_done, turn_info, env_input)
             entry['status'] = status
             if entry['status'].num_actions >= entry['max_actions_per_traj'] and not turn_done:
@@ -216,7 +218,7 @@ class EnvStateManager:
         if num_actions_info is not None: # update last step info
             assert len(history), "History should not be empty"
             history[-1].update(num_actions_info)
-        
+
         entry = {} # append state to history
         if isinstance(next_state, str): # text state
             entry['state'] = next_state
@@ -238,7 +240,7 @@ class EnvStateManager:
             actions = [action.lower() for action in actions]
             mapped_actions = [rev_action_lookup[action] for action in actions if action in rev_action_lookup]
         return mapped_actions
-    
+
     def _handle_mm_state(self, state: Union[str, np.ndarray, list[np.ndarray]]):
         """Handle the state from the environment
         """
@@ -248,7 +250,7 @@ class EnvStateManager:
             state = [state]
         results = [PIL.Image.fromarray(_state, mode='RGB') for _state in state]
         return results
-        
+
     def render(self):
         rendered_list = [entry['env'].render() for entry in self.envs]
         return rendered_list
@@ -272,7 +274,7 @@ def main(config):
     renders = es_manager.render()
     for i, render in enumerate(renders[:4]):  # Show first 2 environments
         print(f"Environment {i}:\n{render}\n")
-    
+
     print("\nRunning step for training environments...")
     all_env_inputs = [
         {
@@ -291,7 +293,7 @@ def main(config):
     env_outputs = es_manager.step(all_env_inputs)
     print(f"Active environments after step: {len(env_outputs)}")
     print(f"env_outputs[:2]: {env_outputs[:2]}")
-    
+
     renders = es_manager.render()
     for i, render in enumerate(renders[:4]):  # Show first 2 environments
         print(f"Environment {i}:\n{render}\n")
@@ -313,15 +315,15 @@ def main(config):
     env_outputs = es_manager.step(all_env_inputs)
     print(f"Active environments after step: {len(env_outputs)}")
     print(f"env_outputs[:2]: {env_outputs[:2]}")
-    
+
     renders = es_manager.render()
     for i, render in enumerate(renders[:4]):  # Show first 2 environments
         print(f"Environment {i}:\n{render}\n")
-    
+
     print("\nRendering final output...")
     final_outputs = es_manager.get_rollout_states()
     print(f"final outputs[:4]: {final_outputs[:4]}")
-    
+
     print("\nClosing environments...")
     es_manager.close()
     print("Test completed successfully!")

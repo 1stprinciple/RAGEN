@@ -166,9 +166,9 @@ class ContextManager:
             actions = [action.strip() for action in action_content.split(self.action_sep) if action.strip()]
             max_actions = self.config.agent_proxy.max_actions_per_turn
 
-            if len(actions) > max_actions:
-                actions = actions[:max_actions] #Only the first MAX_ACTIONS actions are kept in the rollout.
-                action_content = (" " + self.action_sep + " ").join(actions)
+            # if len(actions) > max_actions:
+            #     actions = actions[:max_actions] #Only the first MAX_ACTIONS actions are kept in the rollout.
+            #     action_content = (" " + self.action_sep + " ").join(actions)
 
             llm_response = f"<think>{think_content}</think><answer>{action_content}</answer>" if self.config.agent_proxy.enable_think else f"<answer>{action_content}</answer>"
         return llm_response, actions

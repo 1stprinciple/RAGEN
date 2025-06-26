@@ -1,10 +1,13 @@
 import gymnasium as gym
-from gymnasium.envs.toy_text.frozen_lake import FrozenLakeEnv as GymFrozenLakeEnv
 import numpy as np
+from gymnasium.envs.toy_text.frozen_lake import FrozenLakeEnv as GymFrozenLakeEnv
+
+from ragen.env.base import BaseDiscreteActionEnv
+from ragen.utils import all_seed
+
 from .config import FrozenLakeEnvConfig
 from .utils import generate_random_map
-from ragen.utils import all_seed
-from ragen.env.base import BaseDiscreteActionEnv
+
 
 class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
     def __init__(self, config: FrozenLakeEnvConfig = FrozenLakeEnvConfig()):
@@ -29,21 +32,22 @@ class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
         try:
             with all_seed(seed):
                 self.config.map_seed = seed
-                self.__init__(self.config)   
+                self.__init__(self.config)
                 GymFrozenLakeEnv.reset(self, seed=seed)
                 return self.render()
         except (RuntimeError, RuntimeWarning) as e:
             next_seed = abs(hash(str(seed))) % (2 ** 32) if seed is not None else None
             return self.reset(next_seed)
-    
+
     def step(self, action: int):
         prev_pos = int(self.s)
         _, reward, done, _, _ = GymFrozenLakeEnv.step(self, self.action_map[action])
         next_obs = self.render()
         info = {"action_is_effective": prev_pos != int(self.s), "action_is_valid": True, "success": self.desc[self.player_pos] == b"G"}
-
+        if not info['action_is_effective']:
+            done = True
         return next_obs, reward, done, info
-     
+
     def render(self):
         if self.render_mode == 'text':
             room = self.desc.copy()
@@ -59,7 +63,7 @@ class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
             return self._render_gui('rgb_array')
         else:
             raise ValueError(f"Invalid mode: {self.render_mode}")
-    
+
     def get_all_actions(self):
         return list([k for k in self.ACTION_LOOKUP.keys()])
 

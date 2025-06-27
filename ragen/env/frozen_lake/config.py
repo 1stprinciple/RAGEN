@@ -1,5 +1,6 @@
-from typing import Optional, List, Dict
 from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+
 
 @dataclass
 class FrozenLakeEnvConfig:
@@ -7,10 +8,10 @@ class FrozenLakeEnvConfig:
     # Map config
     size: int = 4
     p: float = 0.8
-    is_slippery: bool = True
+    is_slippery: bool = False
     map_seed: Optional[int] = None
     render_mode: str = "text"
-        
+
     # Mappings
     action_map: Dict[int, int] = field(default_factory=lambda: {1: 0, 2: 1, 3: 2, 4: 3})
     map_lookup: Dict[bytes, int] = field(

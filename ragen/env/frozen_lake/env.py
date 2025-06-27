@@ -3,10 +3,9 @@ import numpy as np
 from gymnasium.envs.toy_text.frozen_lake import FrozenLakeEnv as GymFrozenLakeEnv
 
 from ragen.env.base import BaseDiscreteActionEnv
+from ragen.env.frozen_lake.config import FrozenLakeEnvConfig
+from ragen.env.frozen_lake.utils import generate_random_map
 from ragen.utils import all_seed
-
-from .config import FrozenLakeEnvConfig
-from .utils import generate_random_map
 
 
 class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
@@ -41,7 +40,11 @@ class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
 
     def step(self, action: int):
         prev_pos = int(self.s)
-        _, reward, done, _, _ = GymFrozenLakeEnv.step(self, self.action_map[action])
+        print("action:", self.action_map[action])
+        a, reward, done, b, c = GymFrozenLakeEnv.step(self, self.action_map[action])
+        print("a:" , a)
+        print("b", b)
+        print("c", c)
         next_obs = self.render()
         info = {"action_is_effective": prev_pos != int(self.s), "action_is_valid": True, "success": self.desc[self.player_pos] == b"G"}
         if not info['action_is_effective']:
@@ -78,7 +81,7 @@ class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    config = FrozenLakeEnvConfig(size=4, p=0.8, is_slippery=True, map_seed=42)
+    config = FrozenLakeEnvConfig(size=4, p=0.8, is_slippery=False, map_seed=42)
     env = FrozenLakeEnv(config)
     print(env.reset(seed=42))
     while True:

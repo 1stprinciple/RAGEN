@@ -40,11 +40,7 @@ class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
 
     def step(self, action: int):
         prev_pos = int(self.s)
-        print("action:", self.action_map[action])
         a, reward, done, b, c = GymFrozenLakeEnv.step(self, self.action_map[action])
-        print("a:" , a)
-        print("b", b)
-        print("c", c)
         next_obs = self.render()
         info = {"action_is_effective": prev_pos != int(self.s), "action_is_valid": True, "success": self.desc[self.player_pos] == b"G"}
         if not info['action_is_effective']:

@@ -77,7 +77,7 @@ class FrozenLakeEnv(BaseDiscreteActionEnv, GymFrozenLakeEnv):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    config = FrozenLakeEnvConfig(size=4, p=0.8, is_slippery=False, map_seed=42)
+    config = FrozenLakeEnvConfig(size=8, p=0.8, is_slippery=False, map_seed=42)
     env = FrozenLakeEnv(config)
     print(env.reset(seed=42))
     while True:

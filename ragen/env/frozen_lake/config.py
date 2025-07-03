@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 class FrozenLakeEnvConfig:
     """Configuration for FrozenLake environment"""
     # Map config
-    size: int = 4
+    size: int = 8
     p: float = 0.8
     is_slippery: bool = False
     map_seed: Optional[int] = None

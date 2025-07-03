@@ -15,7 +15,7 @@ model_info:
     model_name: rlor_model
     generation_kwargs:
       temperature: 1
-      max_tokens: 8192
+      max_tokens: 32768
 
 es_manager:
   train:
